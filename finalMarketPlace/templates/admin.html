@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block header %}ADMIN DASHBOARD{% endblock %}
+
+{% block content %}
+<!-- Create Campaign -->
+<div class="card">
+    <h3>Create Campaign</h3>
+    <form method="post" action="/admin/campaign">
+        <input type="hidden" name="token" value="{{ token }}">
+        <div class="grid">
+            <input class="inp" name="title" placeholder="Campaign Title" required>
+            <input class="inp" type="number" name="year" placeholder="Year (e.g., 2024)" required min="2015" max="2025">
+            <select class="inp" name="month">
+                <option value="">Any Month (Not Required)</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+            <input class="inp" type="number" name="price_usd" placeholder="Price USD" required step="0.01" min="1">
+            <input class="inp" type="number" name="target" placeholder="Target Count" required min="1">
+        </div>
+        <div class="sm" style="margin-top: 0.5rem;">
+            💡 <b>Month Selection:</b> Choose a specific month for precise verification or leave as "Any Month" for general campaigns
+        </div>
+        <button class="btn" style="margin-top: 1rem;">Create Campaign</button>
+    </form>
+</div>
+
+<!-- Campaigns List -->
+<div class="card">
+    <h3>Active Campaigns</h3>
+    
+    {% if campaigns %}
+    <div class="grid">
+        {% for c in campaigns %}
+        <div class="card">
+            <div class="flex">
+                <div>
+                    <b>{{ c.title }}</b>
+                    <div class="sm">
+                        {{ c.year }}
+                        {% if c.month %}
+                            - {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][c.month-1] }}
+                        {% endif %}
+                         | ${{ c.price_usd }}
+                    </div>
+                </div>
+                <form method="post" action="/admin/del_campaign/{{ c.id }}?token={{ token }}" onsubmit="return confirm('Delete this campaign?')">
+                    <button class="btn-sec btn-small">Delete</button>
+                </form>
+            </div>
+            <div class="prog">
+                <i style="width: {{ c.progress|default(0) }}%"></i>
+            </div>
+            <div class="sm">{{ c.sold_count }} / {{ c.target_count }} groups sold</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="sm">No campaigns created yet</div>
+    {% endif %}
+</div>
+
+<!-- Telegram Accounts -->
+<div class="card">
+    <div class="flex">
+        <h3>Telegram Accounts</h3>
+        <a class="btn" href="/admin/telegram_login?token={{ token }}">Add Account</a>
+    </div>
+    
+    <div style="margin-top: 1rem;">
+        {% for a in accounts %}
+        <div class="card sm flex">
+            <span class="status {% if a.status == 'ready' %}ok{% else %}no{% endif %}"></span>
+            <div>
+                <b>{{ a.username }}</b> (ID: {{ a.id }})
+                <div class="sm">
+                    Type: {{ a.session_type }} | 
+                    {% if a.session_type == 'receiver' %}
+                    Groups: {{ a.groups_received }}/{{ max_groups }}
+                    {% else %}
+                    Status: {{ a.status }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="sm">Last used: {{ a.last_used }}</div>
+        </div>
+        {% else %}
+        <div class="sm">No Telegram accounts added yet. Add accounts to start processing groups.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Pending Withdrawals -->
+<div class="card">
+    <h3>Pending Withdrawals</h3>
+    {% for w in withdrawals %}
+    <div class="card sm flex">
+        <div>
+            <b>${{ w.amount_usdt }}</b>
+            <div class="sm">{{ w.seller_usdt }}</div>
+        </div>
+        <form method="post" action="/admin/pay/{{ w.id }}?token={{ token }}">
+            <input class="inp" name="txid" placeholder="TXID" required style="margin: 0.25rem;">
+            <button class="btn btn-small">Mark Paid</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="sm">No pending withdrawals</div>
+    {% endfor %}
+</div>
+{% endblock %}

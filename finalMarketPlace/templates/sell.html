@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Sell Groups - Telegram Group Marketplace{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto;">
+    <div class="card">
+        {% if campaign %}
+        <div class="notice">
+            <b>{{ campaign.title }}</b>
+            <div class="sm">Year: {{ campaign.year }} | Price: ${{ campaign.price_usd }} per group</div>
+        </div>
+        {% else %}
+        <div class="alert alert-error">
+            No campaign selected. <a href="/" style="color: var(--p);">Go back to select a campaign</a>
+        </div>
+        {% endif %}
+        
+        <form method="post" id="sellForm">
+            <input type="hidden" name="cid" value="{{ campaign.id if campaign else '' }}">
+            
+            <h3>Submit Your Groups</h3>
+            <div class="sm" style="margin-bottom: 1rem;">
+                Add Telegram group links below. You can submit multiple groups at once.
+            </div>
+            
+            <div id="linkContainer">
+                <div class="link-group">
+                    <input class="inp" 
+                           name="group_link[]" 
+                           placeholder="t.me/yourgroup or t.me/+invitehash" 
+                           required>
+                </div>
+            </div>
+            
+            <button type="button" class="btn-sec btn-small" onclick="addLink()">
+                + Add Another Group
+            </button>
+            
+            <textarea class="inp" 
+                      name="note" 
+                      placeholder="Optional notes (not required)..."></textarea>
+            
+            <div class="notice">
+                <div class="sm"><b>Requirements:</b></div>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li class="sm">Group must be created in {{ campaign.year if campaign else 'specified year' }}</li>
+                    <li class="sm">Must be a supergroup (not channel or basic group)</li>
+                    <li class="sm">Message history must be visible</li>
+                    <li class="sm">No crypto/investment related content</li>
+                    <li class="sm">No imported or location-based groups</li>
+                    <li class="sm">You must be able to transfer CREATOR ownership</li>
+                </ul>
+            </div>
+            
+            <button class="btn" type="submit" style="width: 100%;" id="submitBtn">
+                Submit & Auto-Check All
+            </button>
+        </form>
+
+        <!-- Results Section - Show submission results here -->
+        <div id="results" style="display: none; margin-top: 2rem;">
+            <h3>Submission Results</h3>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let linkCount = 1;
+
+function addLink() {
+    linkCount++;
+    const container = document.getElementById('linkContainer');
+    const div = document.createElement('div');
+    div.className = 'link-group';
+    div.innerHTML = `
+        <div class="flex">
+            <input class="inp" name="group_link[]" placeholder="t.me/yourgroup or t.me/+invitehash" style="flex-grow: 1;">
+            <button type="button" class="btn-sec btn-small" onclick="this.parentElement.remove()">Remove</button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function showResult(message, isError = false) {
+    const resultsDiv = document.getElementById('results');
+    const resultsContent = document.getElementById('resultsContent');
+    
+    resultsContent.innerHTML = `
+        <div class="${isError ? 'alert alert-error' : 'alert alert-success'}">
+            ${message}
+        </div>
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="/profile" class="btn">View All Listings</a>
+            <button class="btn-sec" onclick="resetForm()">Submit More Groups</button>
+        </div>
+    `;
+    resultsDiv.style.display = 'block';
+}
+
+function resetForm() {
+    document.getElementById('sellForm').reset();
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('linkContainer').innerHTML = `
+        <div class="link-group">
+            <input class="inp" name="group_link[]" placeholder="t.me/yourgroup or t.me/+invitehash" required>
+        </div>
+    `;
+    linkCount = 1;
+}
+
+document.getElementById('sellForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.innerHTML = '<div class="spin" style="display: inline-block; width: 16px; height: 16px; margin-right: 8px;"></div> Processing...';
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/sell', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showResult(`
+                <strong>Success!</strong><br>
+                ${data.count} group(s) submitted for verification.<br>
+                <small>You can track the verification progress in your profile.</small>
+            `);
+        } else {
+            showResult(`
+                <strong>Error:</strong><br>
+                ${data.message || 'Failed to submit groups'}
+            `, true);
+        }
+    } catch (error) {
+        showResult(`
+            <strong>Network Error:</strong><br>
+            Please check your connection and try again.
+        `, true);
+    } finally {
+        // Restore button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
+</script>
+{% endblock %}

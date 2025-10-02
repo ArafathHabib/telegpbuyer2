@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}All Campaigns - Telegram Group Marketplace{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>All Active Campaigns</h2>
+    <div class="sm">Browse all available campaigns and start selling your groups</div>
+    
+    <div class="grid">
+        {% for c in campaigns %}
+        <div class="card">
+            <div><b>{{ c.title }}</b></div>
+            <div>
+                <span class="badge">
+                    {{ c.year }}
+                    {% if c.month %}
+                        - {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][c.month-1] }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="price">${{ c.price_usd }}</div>
+            <div class="sm">Need {{ c.target_count - c.sold_count }} more groups</div>
+            <div class="prog">
+                <i style="width: {{ c.progress|default(0) }}%"></i>
+            </div>
+            <div class="sm" style="margin-top: 0.5rem;">
+                Progress: {{ c.sold_count }} / {{ c.target_count }}
+            </div>
+            <div class="flex">
+                {% if user %}
+                <a class="btn" href="/sell?cid={{ c.id }}">SELL NOW</a>
+                {% else %}
+                <!-- CHANGE: Link to login page with redirect parameter -->
+                <a class="btn" href="/login?cid={{ c.id }}">LOGIN TO SELL</a>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="sm">No active campaigns at the moment. Check back later!</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

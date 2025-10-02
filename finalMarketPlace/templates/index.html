@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Telegram Group Marketplace{% endblock %}
+
+{% block content %}
+<!-- User Balance Card (if logged in) -->
+{% if user %}
+<div class="card notice flex">
+    <div>
+        <div class="sm">Wallet Balance</div>
+        <div class="price">${{ user.balance }}</div>
+        <div class="sm">Payouts: USDT ({{ network }})</div>
+    </div>
+    <div>
+        <a class="btn" href="/withdraw">Withdraw</a>
+        {% if is_admin %}
+        <a class="btn" href="/admin">Admin</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Campaigns -->
+<div class="card">
+    <h2>Active Campaigns</h2>
+    <div class="sm">Submit your group and get paid instantly after verification</div>
+    
+    <div class="grid">
+        {% for c in campaigns[:6] %}
+        <div class="card">
+            <div><b>{{ c.title }}</b></div>
+            <div>
+                <span class="badge">
+                    {{ c.year }}
+                    {% if c.month %}
+                        - {{ ['January','February','March','April','May','June','July','August','September','October','November','December'][c.month-1] }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="price">${{ c.price_usd }}</div>
+            <div class="sm">Need {{ c.target_count - c.sold_count }} more</div>
+            <div class="prog">
+                 <i style="width: {{ c.progress|default(0) }}%"></i>
+            </div>
+            <div class="flex">
+                {% if user %}
+                <a class="btn" href="/sell?cid={{ c.id }}">SELL NOW</a>
+                {% else %}
+                <!-- CHANGE: Link to login page with redirect parameter -->
+                <a class="btn" href="/login?redirect=/sell?cid={{ c.id }}">LOGIN TO SELL</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if campaigns|length > 6 %}
+    <div style="text-align: center; margin-top: 1rem;">
+        <a class="btn" href="/campaigns">View More Campaigns</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- User's Recent Listings (if logged in) -->
+{% if user_listings %}
+<div class="card">
+    <h3>Your Recent Listings</h3>
+    {% for l in user_listings %}
+    <div class="card sm">
+        <div class="flex">
+            <div>#{{ l.id }} — {{ l.group_link }}</div>
+            <span class="badge">{{ l.status }}</span>
+        </div>
+        <div class="sm">{{ l.campaign_title }} | ${{ l.price_usd }} | {{ l.created_ts }}</div>
+    </div>
+    {% endfor %}
+    <div style="text-align: center; margin-top: 1rem;">
+        <a class="btn-sec" href="/profile">View All Listings</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- How It Works (if not logged in) -->
+{% if not user %}
+<div class="card">
+    <h2>How It Works</h2>
+    <div class="grid">
+        <div class="card">
+            <h3>1. Sign Up</h3>
+            <div class="sm">Create your account with Telegram username and USDT wallet</div>
+        </div>
+        <div class="card">
+            <h3>2. Choose Campaign</h3>
+            <div class="sm">Select a campaign matching your group's creation year</div>
+        </div>
+        <div class="card">
+            <h3>3. Submit Groups</h3>
+            <div class="sm">Submit your Telegram group links for automated verification</div>
+        </div>
+        <div class="card">
+            <h3>4. Transfer & Earn</h3>
+            <div class="sm">Transfer ownership and get paid instantly to your balance</div>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 2rem;">
+        <a class="btn" href="/register">Get Started Now</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

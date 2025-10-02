@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Telegram Group Marketplace{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 2rem auto;">
+    <div class="card">
+        <h2 style="text-align: center;">Create Account</h2>
+        
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post" action="/register">
+            <input class="inp" 
+                   type="text" 
+                   name="username" 
+                   placeholder="Username" 
+                   required 
+                   autofocus>
+            
+            <input class="inp" 
+                   type="password" 
+                   name="password" 
+                   placeholder="Password" 
+                   required
+                   minlength="6">
+            
+            <input class="inp" 
+                   type="text" 
+                   name="telegram_username" 
+                   placeholder="Telegram @username" 
+                   required
+                   pattern="@?[a-zA-Z0-9_]+">
+            
+            <input class="inp" 
+                   type="text" 
+                   name="usdt_wallet" 
+                   placeholder="USDT Wallet Address (Polygon)" 
+                   required
+                   pattern="0x[a-fA-F0-9]{40}">
+            
+            <small class="sm" style="display: block; margin: 0.5rem 0;">
+                💡 Enter your Polygon USDT wallet address for withdrawals
+            </small>
+            
+            <button class="btn" type="submit" style="width: 100%;">
+                Sign Up
+            </button>
+        </form>
+        
+        <div class="sm" style="text-align: center; margin-top: 1rem;">
+            Already have an account? <a href="/login" style="color: var(--p);">Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

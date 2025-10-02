@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Add Telegram Account - Admin{% endblock %}
+{% block header %}ADD TELEGRAM ACCOUNT{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto;">
+    <!-- Telegram Login Form -->
+    <div class="card">
+        <h3>Add Telegram Account</h3>
+        
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="alert alert-success">{{ success }}</div>
+        {% endif %}
+        
+        <form method="post" action="/admin/telegram_login?token={{ token }}">
+            <input type="hidden" name="token" value="{{ token }}">
+            
+            <div class="grid">
+                <input class="inp" 
+                       type="text" 
+                       name="phone_number" 
+                       id="phoneNumber"
+                       placeholder="Phone number (e.g., +1234567890)" 
+                       value="{{ phone_number }}"
+                       required
+                       {% if require_code or require_password %}readonly{% endif %}>
+                
+                <select class="inp" name="session_type" id="sessionType" {% if require_code or require_password %}disabled{% endif %}>
+                    <option value="checker" {% if session_type == 'checker' %}selected{% endif %}>Checker (joins & verifies groups)</option>
+                    <option value="receiver" {% if session_type == 'receiver' %}selected{% endif %}>Receiver (receives group ownership)</option>
+                    <option value="withdrawal_request" {% if session_type == 'withdrawal_request' %}selected{% endif %}>Withdrawal Request (posts to channel)</option>
+                    <option value="withdrawal_paid" {% if session_type == 'withdrawal_paid' %}selected{% endif %}>Withdrawal Paid (posts confirmations)</option>
+                </select>
+            </div>
+
+            <!-- Channel ID Field - Only show for withdrawal sessions -->
+            <div id="channelField" style="display: {% if session_type in ['withdrawal_request', 'withdrawal_paid'] %}block{% else %}none{% endif %}; margin-top: 1rem;">
+                <input class="inp" 
+                       type="text" 
+                       name="channel_id" 
+                       id="channelInput"
+                       placeholder="Channel @username (e.g., @your_channel)" 
+                       value="{{ channel_id }}"
+                       {% if require_code or require_password %}readonly{% endif %}>
+                <div class="sm">
+                    💡 Enter the channel username where this session will post messages.<br>
+                    Format: @channel_username or channel_username (without @)
+                </div>
+            </div>
+            
+            {% if require_code %}
+            <input type="hidden" name="session_type" value="{{ session_type }}">
+            <input type="hidden" name="channel_id" value="{{ channel_id }}">
+            
+            <input class="inp" 
+                   type="text" 
+                   name="code" 
+                   placeholder="Enter 5-digit verification code" 
+                   required
+                   autofocus>
+            <div class="sm">Check your Telegram app for the verification code</div>
+            {% endif %}
+            
+            {% if require_password %}
+            <input type="hidden" name="session_type" value="{{ session_type }}">
+            <input type="hidden" name="channel_id" value="{{ channel_id }}">
+            
+            <input class="inp" 
+                   type="password" 
+                   name="password" 
+                   placeholder="Enter your 2FA password" 
+                   required
+                   autofocus>
+            <div class="sm">Two-step verification is enabled for this account</div>
+            {% endif %}
+            
+            <button class="btn" type="submit" style="width: 100%; margin-top: 1rem;">
+                {% if not require_code and not require_password %}
+                    Send Verification Code
+                {% else %}
+                    Verify Account
+                {% endif %}
+            </button>
+        </form>
+        
+        {% if require_code or require_password %}
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="/admin/telegram_login?token={{ token }}" class="btn-sec">Start Over</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Existing Sessions -->
+    <div class="card">
+        <h3>Existing Telegram Accounts</h3>
+        
+        {% if sessions_list %}
+            {% for session in sessions_list %}
+            <div class="card sm flex">
+                <span class="status {% if session.status == 'ready' %}ok{% else %}no{% endif %}"></span>
+                <div style="flex-grow: 1;">
+                    <b>{{ session.username }}</b>
+                    <div class="sm">
+                        Type: {{ session.session_type }} | 
+                        Status: {{ session.status }}
+                        {% if session.session_type == 'receiver' %}
+                        | Groups: {{ session.groups_received }}/{{ max_groups }}
+                        {% endif %}
+                        {% if session.channel_id and session.channel_id != 'Not set' %}
+                        | Channel: {{ session.channel_id }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="sm">{{ session.last_used }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="sm">No Telegram accounts added yet</div>
+        {% endif %}
+    </div>
+    
+    <!-- Back to Admin -->
+    <div style="text-align: center; margin-top: 1rem;">
+        <a href="/admin?token={{ token }}" class="btn-sec">← Back to Admin Dashboard</a>
+    </div>
+</div>
+
+<script>
+// Show/hide channel field based on session type
+document.addEventListener('DOMContentLoaded', function() {
+    const sessionType = document.getElementById('sessionType');
+    const channelField = document.getElementById('channelField');
+    const channelInput = document.getElementById('channelInput');
+    
+    function toggleChannelField() {
+        const selectedType = sessionType.value;
+        if (selectedType === 'withdrawal_request' || selectedType === 'withdrawal_paid') {
+            channelField.style.display = 'block';
+            channelInput.required = true;
+        } else {
+            channelField.style.display = 'none';
+            channelInput.required = false;
+        }
+    }
+    
+    // Initial check
+    toggleChannelField();
+    
+    // Add event listener
+    sessionType.addEventListener('change', toggleChannelField);
+});
+</script>
+{% endblock %}

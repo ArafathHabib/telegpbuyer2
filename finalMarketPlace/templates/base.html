@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TeleGPBuyer{% endblock %}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loader">
+        <div class="spin"></div>
+    </div>
+
+    <!-- Header / Navbar -->
+    <div class="hdr">
+        <div class="cont flex" style="justify-content: space-between; align-items: center;">
+            <h1>
+                <a href="/" style="text-decoration:none; color:inherit;">
+                    {% block header %}TeleGPBuyer{% endblock %}
+                </a>
+            </h1>
+
+            <!-- Hamburger Icon -->
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Menu Overlay -->
+<div id="menuOverlay" class="overlay">
+    <ul class="overlay-links">
+        <li><a class="btn-sec" href="/"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a class="btn-sec" href="/campaigns"><i class="fa-solid fa-store"></i> Sell Group</a></li>
+        {% if user %}
+            <li><a class="btn-sec" href="/withdraw"><i class="fa-solid fa-wallet"></i> Withdraw</a></li>
+            <li><a class="btn-sec" href="/profile"><i class="fa-solid fa-user"></i> Profile</a></li>
+            {% if is_admin %}
+                <li><a class="btn-sec" href="/admin?token=admin123"><i class="fa-solid fa-crown"></i> Admin</a></li>
+            {% endif %}
+            <li><a class="btn-sec" href="/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            <li><a class="btn-sec" href="https://t.me/MrwebdevBuyer" target="_blank"><i class="fa-brands fa-telegram"></i> Support</a></li>
+            <li><a class="btn-sec" href="https://t.me/telegpbuyer" target="_blank"><i class="fa-solid fa-bullhorn"></i> Channel</a></li>
+        {% else %}
+            <li><a class="btn-sec" href="/login"><i class="fa-solid fa-right-to-bracket"></i> Login</a></li>
+            <li><a class="btn-sec" href="/register"><i class="fa-solid fa-user-plus"></i> Sign Up</a></li>
+        {% endif %}
+    </ul>
+</div>
+
+
+    <!-- Main Content -->
+    <div class="cont">
+        {% block content %}{% endblock %}
+    </div>
+
+        <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-card">
+            <div class="footer-links">
+                <a href="https://t.me/MrwebdevBuyer" target="_blank">Mr Web Dev 2.0 🧮</a>
+            </div>
+            <div class="footer-bottom">
+                © TeleGPBuyer - Sell your group.
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- Scripts -->
+    <script>
+        function toggleMenu() {
+            document.getElementById('menuOverlay').classList.toggle('open');
+            document.querySelector('.hamburger').classList.toggle('open');
+        }
+
+        // Hide loader after load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelector('.loader').classList.add('hide');
+            }, 1000);
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

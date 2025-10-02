@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Telegram Group Marketplace{% endblock %}
+
+{% block content %}
+<!-- Balance Card -->
+<div class="card notice flex">
+    <div>
+        <div class="sm">Balance</div>
+        <div class="price">${{ user.balance }}</div>
+    </div>
+    <a class="btn" href="/withdraw">Withdraw</a>
+</div>
+
+<!-- Account Info -->
+<div class="card">
+    <h3>Account Information</h3>
+    <div class="grid">
+        <div>
+            <div class="sm">Username</div>
+            <div><b>{{ user.username }}</b></div>
+        </div>
+        <div>
+            <div class="sm">Telegram</div>
+            <div><b>{{ user.telegram_username }}</b></div>
+        </div>
+        <div>
+            <div class="sm">Total Listings</div>
+            <div><b>{{ stats.total }}</b></div>
+        </div>
+        <div>
+            <div class="sm">Successful Sales</div>
+            <div><b>{{ stats.sold }}</b></div>
+        </div>
+    </div>
+</div>
+
+<!-- Listings -->
+<div class="card">
+    <h3>Your Listings</h3>
+    {% if listings %}
+        {% for l in listings %}
+        <div class="card sm">
+            <div class="flex">
+                <div><b>{{ l.group_link }}</b></div>
+                <span class="badge">{{ l.status }}</span>
+            </div>
+            <div class="sm">{{ l.campaign_title }} | ${{ l.price_usd }} | {{ l.created_ts }}</div>
+            
+            {% if l.status == 'ready_for_transfer' %}
+            <div style="margin-top: 0.5rem;">
+                <button class="btn btn-small" data-id="{{ l.id }}" data-username="{{ l.target_username }}" onclick="showTransferModal(this.dataset.id, this.dataset.username)">
+                    Transfer Ownership
+                </button>
+            </div>
+            {% endif %}
+            
+            {% if l.check_log %}
+            <details style="margin-top: 0.5rem;">
+                <summary class="sm" style="cursor: pointer;">View Details</summary>
+                <pre style="margin-top: 0.5rem;">{{ l.check_log }}</pre>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="sm">No listings yet. <a href="/sell">Start selling!</a></div>
+    {% endif %}
+</div>
+
+<!-- Withdrawals -->
+<div class="card">
+    <h3>Withdrawal History</h3>
+    {% if withdrawals %}
+        {% for w in withdrawals %}
+        <div class="card sm flex">
+            <div>
+                <b>${{ w.amount_usdt }}</b>
+                <div class="sm">{{ w.created_ts }}</div>
+            </div>
+            <span class="badge">{{ w.status }}</span>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="sm">No withdrawal requests yet</div>
+    {% endif %}
+</div>
+
+<!-- Transfer Modal -->
+<div id="transferModal" class="modal">
+    <div class="modal-content card wait">
+        <div id="transferContent">
+            <h3 id="transferTitle">Transfer Ownership</h3>
+            <div class="sm" id="transferDetail"></div>
+            <div style="margin-top: 1rem;">
+                <button class="btn" id="confirmTransferBtn" onclick="confirmTransfer()">
+                    I Transferred Creator Rights
+                </button>
+                <button class="btn-sec" onclick="closeTransferModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+        <div id="transferWait" style="display: none;">
+            <div class="spin"></div>
+            <h3 id="transferMsg">Verifying...</h3>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentListingId = null;
+
+function showTransferModal(listingId, username) {
+    currentListingId = listingId;
+    const modal = document.getElementById('transferModal');
+    const detail = document.getElementById('transferDetail');
+    const targetUser = username ? '@' + username : 'our Telegram admin';
+    
+    detail.innerHTML = '<b>Important:</b> You must transfer CREATOR ownership (not just admin) of your group to <b>' + targetUser + '</b>.<br><br>' +
+        '1. Open your group in Telegram<br>' +
+        '2. Go to Group Info → Edit → Administrators<br>' +
+        '3. Find ' + targetUser + ' in the list<br>' +
+        '4. Tap their name → Transfer Ownership<br>' +
+        '5. Confirm the transfer<br>' +
+        '6. Return here and click confirm';
+    
+    document.getElementById('transferContent').style.display = 'block';
+    document.getElementById('transferWait').style.display = 'none';
+    modal.classList.add('show');
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').classList.remove('show');
+}
+
+async function confirmTransfer() {
+    if (!currentListingId) return;
+    
+    document.getElementById('transferContent').style.display = 'none';
+    document.getElementById('transferWait').style.display = 'block';
+    document.getElementById('transferMsg').textContent = 'Verifying creator ownership...';
+    
+    try {
+        const response = await fetch('/transfer/' + currentListingId, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            document.getElementById('transferMsg').textContent = 'Success! $' + data.amount + ' added to balance';
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            document.getElementById('transferMsg').textContent = 'Error: ' + (data.message || 'Verification failed');
+            setTimeout(() => {
+                closeTransferModal();
+            }, 3000);
+        }
+    } catch (error) {
+        document.getElementById('transferMsg').textContent = 'Error: Network error';
+        setTimeout(() => {
+            closeTransferModal();
+        }, 3000);
+    }
+}
+</script>
+{% endblock %}
